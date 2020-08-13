@@ -52,7 +52,7 @@ function(make_bin_file target)
     add_custom_command(
         TARGET ${target} POST_BUILD
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        COMMAND ${CMAKE_OBJCOPY} -O binary ${target} ${target}.bin
+        COMMAND ${CMAKE_OBJCOPY} -O ihex ${target} ${target}.hex
     )
 endfunction()
 
