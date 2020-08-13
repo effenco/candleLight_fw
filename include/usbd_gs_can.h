@@ -29,6 +29,7 @@ THE SOFTWARE.
 #include <stdbool.h>
 #include <usbd_def.h>
 #include <queue.h>
+#include <stdint.h>
 #include <led.h>
 #include <can.h>
 #include <gs_usb.h>

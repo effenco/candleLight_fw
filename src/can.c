@@ -25,24 +25,27 @@ THE SOFTWARE.
 */
 
 #include "can.h"
-
+volatile uint32_t pclk1 ;
 void can_init(can_data_t *hcan, CAN_TypeDef *instance)
 {
 	__HAL_RCC_CAN1_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
 	GPIO_InitTypeDef itd;
 	itd.Pin = GPIO_PIN_8|GPIO_PIN_9;
 	itd.Mode = GPIO_MODE_AF_PP;
 	itd.Pull = GPIO_NOPULL;
-	itd.Speed = GPIO_SPEED_FREQ_HIGH;
-	itd.Alternate = GPIO_AF4_CAN;
+	itd.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+	itd.Alternate = GPIO_AF9_CAN1;
 	HAL_GPIO_Init(GPIOB, &itd);
 
+	/* PCLK1 = SysClk/4 => PCLK1 = 42 */
+  pclk1 = HAL_RCC_GetPCLK1Freq(); // APB1
 	hcan->instance   = instance;
-	hcan->brp        = 6;
-	hcan->phase_seg1 = 13;
-	hcan->phase_seg2 = 2;
-	hcan->sjw        = 1;
+	hcan->brp        = 4; /* div by 2 => 21 Mhz*/
+	hcan->phase_seg1 = 7+8;
+	hcan->phase_seg2 = 5;
+	hcan->sjw        = 4;
 }
 
 bool can_set_bittiming(can_data_t *hcan, uint16_t brp, uint8_t phase_seg1, uint8_t phase_seg2, uint8_t sjw)
@@ -68,7 +71,7 @@ void can_enable(can_data_t *hcan, bool loop_back, bool listen_only, bool one_sho
 
 	uint32_t mcr = CAN_MCR_INRQ
 				 | CAN_MCR_ABOM
-				 | CAN_MCR_TXFP
+			     | CAN_MCR_TXFP
 				 | (one_shot ? CAN_MCR_NART : 0);
 
 	uint32_t btr = ((uint32_t)(hcan->sjw-1)) << 24
@@ -154,8 +157,9 @@ bool can_receive(can_data_t *hcan, struct gs_host_frame *rx_frame)
 
 		can->RF0R |= CAN_RF0R_RFOM0; // release FIFO
 
-		return true;
+	    return true;
 	} else {
+
 		return false;
 	}
 }
@@ -175,6 +179,8 @@ static CAN_TxMailBox_TypeDef *can_find_free_mailbox(can_data_t *hcan)
 		return 0;
 	}
 }
+
+//#define, CAN_ID_EXT CAN_Id_Extended
 
 bool can_send(can_data_t *hcan, struct gs_host_frame *frame)
 {
@@ -213,9 +219,8 @@ bool can_send(can_data_t *hcan, struct gs_host_frame *frame)
 		mb->TIR |= CAN_TI0R_TXRQ;
 
 		return true;
-	} else {
-		return false;
 	}
+	return false;
 }
 
 uint32_t can_get_error_status(can_data_t *hcan)

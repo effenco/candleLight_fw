@@ -26,16 +26,14 @@ THE SOFTWARE.
 
 #include "dfu.h"
 #include <stdint.h>
-#include "stm32f0xx_hal.h"
+#include "stm32f4xx_hal.h"
 
 #define RESET_TO_BOOTLOADER_MAGIC_CODE 0xDEADBEEF
 
-#define SYSMEM_STM32F042 0x1FFFC400
-#define SYSMEM_STM32F072 0x1FFFC800
+#define SYSMEM_STM32F405 0x1FFFC400
 
 static uint32_t dfu_reset_to_bootloader_magic;
 
-static void dfu_hack_boot_pin_f042();
 static void dfu_jump_to_bootloader();
 
 void dfu_run_bootloader()
@@ -50,32 +48,14 @@ void __initialize_hardware_early(void)
 	{
 		switch (HAL_GetDEVID())
 		{
-
-			case 0x445: // STM32F04x
-				dfu_hack_boot_pin_f042();
-				dfu_jump_to_bootloader(SYSMEM_STM32F042);
-				break;
-
-			case 0x448: // STM32F07x
-				dfu_jump_to_bootloader(SYSMEM_STM32F072);
+			case 0x448: // STM32F4xx
+				dfu_jump_to_bootloader(SYSMEM_STM32F405);
 				break;
 
 		}
 	}
 
 	SystemInit();
-}
-
-static void dfu_hack_boot_pin_f042()
-{
-	__HAL_RCC_GPIOF_CLK_ENABLE();
-	GPIO_InitTypeDef GPIO_InitStruct;
-	GPIO_InitStruct.Pin = GPIO_PIN_11;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStruct.Pull = GPIO_PULLUP;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
-	HAL_GPIO_WritePin(GPIOF, GPIO_PIN_11, 1);
 }
 
 static void dfu_jump_to_bootloader(uint32_t sysmem_base)

@@ -26,8 +26,8 @@ THE SOFTWARE.
 
 #include "led.h"
 #include <string.h>
-#include "stm32f0xx_hal.h"
-#include "stm32f0xx_hal_gpio.h"
+#include "stm32f4xx_hal.h"
+#include "stm32f4xx_hal_gpio.h"
 
 void led_init(
 	led_data_t *leds,

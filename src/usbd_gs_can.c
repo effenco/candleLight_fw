@@ -25,17 +25,17 @@ THE SOFTWARE.
 */
 
 #include "usbd_gs_can.h"
-#include "config.h"
+//#include "config.h"
 #include <stdlib.h>
 #include <string.h>
-#include "stm32f0xx_hal.h"
+#include "stm32f4xx_hal.h"
 #include "usbd_desc.h"
 #include "usbd_ctlreq.h"
 #include "usbd_ioreq.h"
 #include "gs_usb.h"
 #include "can.h"
 #include "timer.h"
-#include "flash.h"
+//#include "flash.h"
 
 typedef struct {
 	uint8_t ep0_buf[CAN_CMD_PACKET_SIZE];
@@ -275,7 +275,7 @@ static const struct gs_device_bt_const USBD_GS_CAN_btconst = {
 	| GS_CAN_FEATURE_IDENTIFY
 	| GS_CAN_FEATURE_USER_ID
 	| GS_CAN_FEATURE_PAD_PKTS_TO_MAX_PKT_SIZE,
-	48000000, // can timing base clock
+	42000000, // can timing base clock
 	1, // tseg1 min
 	16, // tseg1 max
 	1, // tseg2 min
@@ -366,35 +366,37 @@ static uint8_t USBD_GS_CAN_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 
 	USBD_SetupReqTypedef *req = &hcan->last_setup_request;
 
-	switch (req->bRequest) {
+    switch (req->bRequest) {
 
-		case GS_USB_BREQ_HOST_FORMAT:
-			// TODO process host data (expect 0x0000beef in byte_order)
-			memcpy(&hcan->host_config, hcan->ep0_buf, sizeof(hcan->host_config));
-			break;
+    	case GS_USB_BREQ_HOST_FORMAT:
+    		// TODO process host data (expect 0x0000beef in byte_order)
+    		memcpy(&hcan->host_config, hcan->ep0_buf, sizeof(hcan->host_config));
+    		break;
 
-		case GS_USB_BREQ_IDENTIFY:
-			memcpy(&param_u32, hcan->ep0_buf, sizeof(param_u32));
-			if (param_u32) {
-				led_run_sequence(hcan->leds, led_identify_seq, -1);
-			} else {
-				ch = hcan->channels[req->wValue]; // TODO verify wValue input data (implement getChannelData() ?)
-				led_set_mode(hcan->leds, can_is_enabled(ch) ? led_mode_normal : led_mode_off);
-			}
-			break;
+    	case GS_USB_BREQ_IDENTIFY:
+    		memcpy(&param_u32, hcan->ep0_buf, sizeof(param_u32));
+    		if (param_u32) {
+    			led_run_sequence(hcan->leds, led_identify_seq, -1);
+    		} else {
+    			ch = hcan->channels[req->wValue]; // TODO verify wValue input data (implement getChannelData() ?)
+						int isEnabled = 1;
+						isEnabled = can_is_enabled(ch);
+        		led_set_mode(hcan->leds, isEnabled ? led_mode_normal : led_mode_off);
+    		}
+    		break;
 
-		case GS_USB_BREQ_SET_USER_ID:
-			memcpy(&param_u32, hcan->ep0_buf, sizeof(param_u32));
-			if (flash_set_user_id(req->wValue, param_u32)) {
-				flash_flush();
-			}
-			break;
+    	case GS_USB_BREQ_SET_USER_ID:
+    		memcpy(&param_u32, hcan->ep0_buf, sizeof(param_u32));
+    		//if (flash_set_user_id(req->wValue, param_u32)) {
+    		//	flash_flush();
+    		//}
+    		break;
 
-		case GS_USB_BREQ_MODE:
-			if (req->wValue < NUM_CAN_CHANNEL) {
+    	case GS_USB_BREQ_MODE:
+    		if (req->wValue < NUM_CAN_CHANNEL) {
 
-				mode = (struct gs_device_mode*)hcan->ep0_buf;
-				ch = hcan->channels[req->wValue];
+    			mode = (struct gs_device_mode*)hcan->ep0_buf;
+    			ch = hcan->channels[req->wValue];
 
 				if (mode->mode == GS_CAN_MODE_RESET) {
 
@@ -405,22 +407,20 @@ static uint8_t USBD_GS_CAN_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 
 					hcan->timestamps_enabled = (mode->flags & GS_CAN_MODE_HW_TIMESTAMP) != 0;
 					hcan->pad_pkts_to_max_pkt_size = (mode->flags & GS_CAN_MODE_PAD_PKTS_TO_MAX_PKT_SIZE) != 0;
-
 					can_enable(ch,
 						(mode->flags & GS_CAN_MODE_LOOP_BACK) != 0,
 						(mode->flags & GS_CAN_MODE_LISTEN_ONLY) != 0,
 						(mode->flags & GS_CAN_MODE_ONE_SHOT) != 0
 						// triple sampling not supported on bxCAN
 					);
-
 					led_set_mode(hcan->leds, led_mode_normal);
 				}
 			}
-			break;
+    		break;
 
-		case GS_USB_BREQ_BITTIMING:
-			timing = (struct gs_device_bittiming*)hcan->ep0_buf;
-			if (req->wValue < NUM_CAN_CHANNEL) {
+    	case GS_USB_BREQ_BITTIMING:
+    		timing = (struct gs_device_bittiming*)hcan->ep0_buf;
+    		if (req->wValue < NUM_CAN_CHANNEL) {
 				can_set_bittiming(
 					hcan->channels[req->wValue],
 					timing->brp,
@@ -494,11 +494,11 @@ static uint8_t USBD_GS_CAN_Config_Request(USBD_HandleTypeDef *pdev, USBD_SetupRe
 		case GS_USB_BREQ_TIMESTAMP:
 			memcpy(hcan->ep0_buf, &hcan->sof_timestamp_us, sizeof(hcan->sof_timestamp_us));
 			USBD_CtlSendData(pdev, hcan->ep0_buf, sizeof(hcan->sof_timestamp_us));
-			break;
+    		break;
 
 		case GS_USB_BREQ_GET_USER_ID:
 			if (req->wValue < NUM_CAN_CHANNEL) {
-				d32 = flash_get_user_id(req->wValue);
+				d32 = 0; // flash_get_user_id(req->wValue);
 				memcpy(hcan->ep0_buf, &d32, sizeof(d32));
 				USBD_CtlSendData(pdev, hcan->ep0_buf, sizeof(d32));
 			} else {
@@ -681,7 +681,7 @@ uint8_t USBD_GS_CAN_SendFrame(USBD_HandleTypeDef *pdev, struct gs_host_frame *fr
 	size_t len = sizeof(struct gs_host_frame);
 
 	if (!hcan->timestamps_enabled)
-		len -= 4;
+	  len -= 4;
 
 	send_addr = (uint8_t *)frame;
 
@@ -697,9 +697,11 @@ uint8_t USBD_GS_CAN_SendFrame(USBD_HandleTypeDef *pdev, struct gs_host_frame *fr
 		send_addr = buf;
 		len = sizeof(buf);
 	}
-
+   
 	return USBD_GS_CAN_Transmit(pdev, send_addr, len);
 }
+
+#define DFU_INTERFACE_STRING_FS      (uint8_t*) "candleLight firmware upgrade interface"
 
 uint8_t *USBD_GS_CAN_GetStrDesc(USBD_HandleTypeDef *pdev, uint8_t index, uint16_t *length)
 {
@@ -724,3 +726,4 @@ bool USBD_GS_CAN_DfuDetachRequested(USBD_HandleTypeDef *pdev)
 	USBD_GS_CAN_HandleTypeDef *hcan = (USBD_GS_CAN_HandleTypeDef*)pdev->pClassData;
 	return hcan->dfu_detach_requested;
 }
+
