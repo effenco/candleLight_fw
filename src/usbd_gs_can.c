@@ -28,14 +28,14 @@ THE SOFTWARE.
 #include "config.h"
 #include <stdlib.h>
 #include <string.h>
-#include "stm32f0xx_hal.h"
+#include "stm32f4xx_hal.h"
 #include "usbd_desc.h"
 #include "usbd_ctlreq.h"
 #include "usbd_ioreq.h"
 #include "gs_usb.h"
 #include "can.h"
 #include "timer.h"
-#include "flash.h"
+//#include "flash.h"
 
 typedef struct {
 	uint8_t ep0_buf[CAN_CMD_PACKET_SIZE];
@@ -385,9 +385,9 @@ static uint8_t USBD_GS_CAN_EP0_RxReady(USBD_HandleTypeDef *pdev) {
 
 		case GS_USB_BREQ_SET_USER_ID:
 			memcpy(&param_u32, hcan->ep0_buf, sizeof(param_u32));
-			if (flash_set_user_id(req->wValue, param_u32)) {
-				flash_flush();
-			}
+			//if (flash_set_user_id(req->wValue, param_u32)) {
+			//	flash_flush();
+			//}
 			break;
 
 		case GS_USB_BREQ_MODE:
@@ -468,7 +468,7 @@ static uint8_t USBD_GS_CAN_DFU_Request(USBD_HandleTypeDef *pdev, USBD_SetupReqTy
 static uint8_t USBD_GS_CAN_Config_Request(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
 {
 	USBD_GS_CAN_HandleTypeDef *hcan = (USBD_GS_CAN_HandleTypeDef*) pdev->pClassData;
-	uint32_t d32;
+	//uint32_t d32;
 
 	switch (req->bRequest) {
 
@@ -497,13 +497,13 @@ static uint8_t USBD_GS_CAN_Config_Request(USBD_HandleTypeDef *pdev, USBD_SetupRe
 			break;
 
 		case GS_USB_BREQ_GET_USER_ID:
-			if (req->wValue < NUM_CAN_CHANNEL) {
-				d32 = flash_get_user_id(req->wValue);
-				memcpy(hcan->ep0_buf, &d32, sizeof(d32));
-				USBD_CtlSendData(pdev, hcan->ep0_buf, sizeof(d32));
-			} else {
+			//if (req->wValue < NUM_CAN_CHANNEL) {
+			//	d32 = flash_get_user_id(req->wValue);
+			//	memcpy(hcan->ep0_buf, &d32, sizeof(d32));
+			//	USBD_CtlSendData(pdev, hcan->ep0_buf, sizeof(d32));
+			//} else {
 				USBD_CtlError(pdev, req);
-			}
+			//}
 			break;
 
 

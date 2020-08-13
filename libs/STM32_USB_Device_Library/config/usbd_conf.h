@@ -25,8 +25,8 @@ THE SOFTWARE.
 */
 
 #pragma once
-
-#include "stm32f0xx_hal.h"
+#include "stm32f4xx.h"
+#include "stm32f4xx_hal.h"
 
 #define USBD_MAX_NUM_INTERFACES      1
 #define USBD_MAX_NUM_CONFIGURATION   1

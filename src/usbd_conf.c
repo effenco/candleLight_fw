@@ -28,7 +28,12 @@ THE SOFTWARE.
 #include "usbd_core.h"
 #include "usbd_gs_can.h"
 
-PCD_HandleTypeDef hpcd_USB_FS;
+PCD_HandleTypeDef hpcd_USB;
+
+#define USB USB_OTG_HS
+#define __HAL_RCC_USB_CLK_ENABLE __HAL_RCC_USB_OTG_HS_CLK_ENABLE
+#define __HAL_RCC_USB_CLK_DISABLE __HAL_RCC_USB_OTG_HS_CLK_DISABLE
+#define USB_IRQn OTG_HS_IRQn
 
 void HAL_PCD_MspInit(PCD_HandleTypeDef* hpcd)
 {
@@ -102,17 +107,21 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
 {
 	/* Init USB_IP */
 	/* Link The driver to the stack */
-	hpcd_USB_FS.pData = pdev;
-	pdev->pData = &hpcd_USB_FS;
+	hpcd_USB.pData = pdev;
+	pdev->pData = &hpcd_USB;
 
-	hpcd_USB_FS.Instance = USB;
-	hpcd_USB_FS.Init.dev_endpoints = 5;
-	hpcd_USB_FS.Init.speed = PCD_SPEED_FULL;
-	hpcd_USB_FS.Init.ep0_mps = DEP0CTL_MPS_64;
-	hpcd_USB_FS.Init.phy_itface = PCD_PHY_EMBEDDED;
-	hpcd_USB_FS.Init.low_power_enable = DISABLE;
-	hpcd_USB_FS.Init.lpm_enable = DISABLE;
-	HAL_PCD_Init(&hpcd_USB_FS);
+	hpcd_USB.Instance = USB_OTG_HS;
+	hpcd_USB.Init.dev_endpoints = 4;
+	hpcd_USB.Init.speed = PCD_SPEED_FULL;
+	hpcd_USB.Init.ep0_mps = DEP0CTL_MPS_64;
+	hpcd_USB.Init.dma_enable = 0;
+	hpcd_USB.Init.use_dedicated_ep1 = 0;
+	hpcd_USB.Init.phy_itface = PCD_PHY_EMBEDDED;
+	hpcd_USB.Init.low_power_enable = 0;
+	hpcd_USB.Init.lpm_enable = 0;
+	hpcd_USB.Init.Sof_enable = 1;
+	hpcd_USB.Init.vbus_sensing_enable = 0;
+	HAL_PCD_Init(&hpcd_USB);
 
 	/*
 	* PMA layout
@@ -123,10 +132,11 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
 	*  0xD8 - 0x157 (128 bytes) EP1 OUT (buffer 1)
 	* 0x158 - 0x1D7 (128 bytes) EP1 OUT (buffer 2)
 	*/
-	HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , 0x00 , PCD_SNG_BUF, 24);
-	HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , 0x80 , PCD_SNG_BUF, 0x58);
-	HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , 0x81 , PCD_SNG_BUF, 0x98);
-	HAL_PCDEx_PMAConfig((PCD_HandleTypeDef*)pdev->pData , 0x02 , PCD_DBL_BUF, 0x00D80158);
+	/* total is what? */
+	HAL_PCDEx_SetRxFiFo(&hpcd_USB, 0x80); // all EPs
+	HAL_PCDEx_SetTxFiFo(&hpcd_USB, 0, 0x40); // setup
+	HAL_PCDEx_SetTxFiFo(&hpcd_USB, 1, 0x40); // GSUSB_ENDPOINT_IN
+	HAL_PCDEx_SetTxFiFo(&hpcd_USB, 2, 0x80); // GSUSB_ENDPOINT_OUT
 
 	return USBD_OK;
 }

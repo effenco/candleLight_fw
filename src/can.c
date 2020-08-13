@@ -34,8 +34,8 @@ void can_init(can_data_t *hcan, CAN_TypeDef *instance)
 	itd.Pin = GPIO_PIN_8|GPIO_PIN_9;
 	itd.Mode = GPIO_MODE_AF_PP;
 	itd.Pull = GPIO_NOPULL;
-	itd.Speed = GPIO_SPEED_FREQ_HIGH;
-	itd.Alternate = GPIO_AF4_CAN;
+	itd.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+	itd.Alternate = GPIO_AF9_CAN1;
 	HAL_GPIO_Init(GPIOB, &itd);
 
 	hcan->instance   = instance;

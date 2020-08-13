@@ -3,7 +3,7 @@ project(candleLightFirmware C ASM)
 
 add_compile_options(
     -std=gnu11
-    -mcpu=cortex-m0 -mthumb
+    -mcpu=cortex-m4 -mthumb
     -Wall -Wextra -Werror -Wno-deprecated
     -fmessage-length=0
     -fsigned-char
@@ -14,7 +14,7 @@ add_compile_options(
 )
 
 add_link_options(
-    -mcpu=cortex-m0 -mthumb -O
+    -mcpu=cortex-m4 -mthumb -O
     -Wall -Wextra -g3
     -nostartfiles -Xlinker --gc-sections --specs=nano.specs
     -T ${CMAKE_SOURCE_DIR}/ldscripts/ldscript.ld
@@ -35,7 +35,7 @@ set(
 
         include/can.h src/can.c
         include/dfu.h src/dfu.c
-        include/flash.h src/flash.c
+        
         include/gpio.h src/gpio.c
         include/led.h src/led.c
         include/queue.h src/queue.c
@@ -74,21 +74,12 @@ endfunction()
 ######### commands for adding each target have a lot in common: make helper func.
 # Split into two categories, F042-based and F072-based.
 
-function(add_f042_target TGTNAME)
-	add_executable(${TGTNAME}_fw ${SOURCE_FILES})
-    target_include_directories(${TGTNAME}_fw PRIVATE include/)
-    target_compile_definitions(${TGTNAME}_fw PRIVATE BOARD=BOARD_${TGTNAME})
-    target_link_libraries(${TGTNAME}_fw PRIVATE STM32_HAL_STM32F042x6 STM32_USB_Device_Library_STM32F042x6)
-    make_bin_file(${TGTNAME}_fw)
-    show_object_size(${TGTNAME}_fw)
-    add_flash_target(${TGTNAME}_fw)
-endfunction()
 
-function(add_f072_target TGTNAME)
+function(add_f405_target TGTNAME)
 	add_executable(${TGTNAME}_fw ${SOURCE_FILES})
     target_include_directories(${TGTNAME}_fw PRIVATE include/)
     target_compile_definitions(${TGTNAME}_fw PRIVATE BOARD=BOARD_${TGTNAME})
-    target_link_libraries(${TGTNAME}_fw PRIVATE STM32_HAL_STM32F072xB STM32_USB_Device_Library_STM32F072xB)
+    target_link_libraries(${TGTNAME}_fw PRIVATE STM32_HAL_STM32F405xx STM32_USB_Device_Library_STM32F405xx)
     make_bin_file(${TGTNAME}_fw)
     show_object_size(${TGTNAME}_fw)
     add_flash_target(${TGTNAME}_fw)
@@ -96,23 +87,16 @@ endfunction()
 
 ########## generate list of targets.
 # the "_fw" part is appended automatically
-set(TGT042_LIST "cantact" "canalyze" "canable" "usb2can")
-set(TGT072_LIST "candleLight")
+set(TGT405_LIST "canalyze")
 
 
-foreach (TGTNAME IN LISTS TGT042_LIST)
+foreach (TGTNAME IN LISTS TGT405_LIST)
 	option(BUILD_${TGTNAME} "Build firmware for \"${TGTNAME}\" (default=yes)" ON)
 	if (BUILD_${TGTNAME})
-		add_f042_target(${TGTNAME})
+		add_f405_target(${TGTNAME})
 	endif()
 endforeach()
 
-foreach (TGTNAME IN LISTS TGT072_LIST)
-	option(BUILD_${TGTNAME} "Build firmware for \"${TGTNAME}\" (default=yes)" ON)
-	if (BUILD_${TGTNAME})
-		add_f072_target(${TGTNAME})
-	endif()
-endforeach()
 
 message("*******************")
 message("You may now:\n\t-compile all targets ('make')\n\t-compile a single target (e.g. 'make cantact_fw'")
