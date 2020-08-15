@@ -44,6 +44,19 @@ void gpio_init()
 	HAL_GPIO_Init(CAN_S_GPIO_Port, &GPIO_InitStruct);
 #endif
 
+#ifdef PWR_LED_Pin
+	#if (PWR_LED_Active_High == 1)
+		HAL_GPIO_WritePin(PWR_LED_GPIO_Port, PWR_LED_Pin, GPIO_PIN_RESET);
+	#else
+		HAL_GPIO_WritePin(PWR_LED_GPIO_Port, PWR_LED_Pin, GPIO_PIN_SET);
+	#endif
+	GPIO_InitStruct.Pin = PWR_LED_Pin;
+	GPIO_InitStruct.Mode = PWR_LED_Mode;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	HAL_GPIO_Init(PWR_LED_GPIO_Port, &GPIO_InitStruct);
+#endif
+
 #if (LED1_Active_High == 1)
 	HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
 #else
