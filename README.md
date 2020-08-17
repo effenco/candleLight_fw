@@ -40,7 +40,7 @@ cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/gcc-arm-none-eabi-8-2019-q3-update.cmak
 # cmake-gui ..
 # don't forget to specify the cmake toolchain file before configuring.
 
-make canalyze_fw # one of candleLight_fw / usb2can_fw / cantact_fw / canalyze_fw / canable_fw
+make usbcan2eu_fw # one of candleLight_fw / usb2can_fw / cantact_fw / canalyze_fw / canable_fw / usbcan2eu_fw
 # alternately, each board target may be disabled as cmake options
 
 ```

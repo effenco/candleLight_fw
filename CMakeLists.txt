@@ -88,7 +88,7 @@ endfunction()
 ########## generate list of targets.
 # the "_fw" part is appended automatically
 set(TGT405_LIST "canalyze")
-
+set(TGT405_LIST "usbcan2eu")
 
 foreach (TGTNAME IN LISTS TGT405_LIST)
 	option(BUILD_${TGTNAME} "Build firmware for \"${TGTNAME}\" (default=yes)" ON)
